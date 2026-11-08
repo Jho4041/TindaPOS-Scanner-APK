@@ -1,0 +1,43 @@
+name: Build TindaPOS Scanner APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'android-scanner/**'
+      - '.github/workflows/build-scanner-apk.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK platform
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Build debug APK
+        working-directory: android-scanner
+        run: gradle --no-daemon assembleDebug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TindaPOS-Scanner-debug-apk
+          path: android-scanner/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
