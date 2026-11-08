@@ -1,0 +1,49 @@
+{
+  "name": "tindapos-pc",
+  "version": "1.0.0",
+  "description": "TindaPOS.ph for Windows",
+  "main": "main.js",
+  "author": "TindaPOS.ph",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.tindapos.pc",
+    "productName": "TindaPOS.ph",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "build/icon.png",
+      "www/**/*"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "signAndEditExecutable": false,
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "TindaPOS.ph-Setup-${version}.${ext}",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
+    },
+    "portable": {
+      "artifactName": "TindaPOS.ph-Portable-${version}.${ext}"
+    }
+  },
+  "allowScripts": {
+    "electron": true
+  }
+}

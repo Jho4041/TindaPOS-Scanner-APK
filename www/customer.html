@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Customer screen</title>
+<style>
+:root{--g:#183326;--g2:#2f6b4f;--bg:#f2f5ef;--ink:#1d2a24;--mut:#66756c;--y:#f0b429;--line:#dfe5da}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;overflow:hidden}
+header{background:var(--g);color:#fff;padding:2vh 3vw;display:flex;align-items:baseline;gap:2vw}
+header h1{margin:0;font-size:4.2vh}header span{opacity:.75;font-size:2.4vh}
+main{flex:1;min-height:0;display:flex}
+.view{flex:1;display:none;min-height:0}.view.on{display:flex}
+#idle{flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:4vh 6vw;gap:3vh}
+#idle h2{font-size:7vh;margin:0;color:var(--g)}#promo{font-size:4vh;color:var(--g2);min-height:6vh;transition:opacity .4s}
+#cart{gap:2vw;padding:2vh 3vw}
+#itemsWrap{flex:1.6;display:flex;flex-direction:column;min-width:0;min-height:0}
+#items{flex:1;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:2vh;padding:1vh 2vw}
+.row{display:flex;justify-content:space-between;gap:2vw;padding:1.4vh 0;border-bottom:1px solid var(--line);font-size:3.4vh}
+.row:last-child{border-bottom:0}.row .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}.row .q{color:var(--mut);margin-right:1vw}
+.row b{font-variant-numeric:tabular-nums}
+#side{flex:1;display:flex;flex-direction:column;gap:2vh;min-width:0}
+#pic{flex:1;min-height:0;background:#fff;border:1px solid var(--line);border-radius:2vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5vh;gap:1vh;overflow:hidden}
+#pic img{max-width:100%;max-height:70%;object-fit:contain;border-radius:1.5vh}#pic div{font-size:3vh;text-align:center}
+#qrBox{display:none;flex:1.3;min-height:0;background:#fff;border:1px solid var(--line);border-radius:2vh;padding:1.2vh;flex-direction:column;align-items:center;gap:.8vh}
+#qrBox img{flex:1;min-height:0;max-width:100%;object-fit:contain}#qrLbl{font-size:2.6vh;text-align:center;color:var(--g);font-weight:700}
+#totals{background:#fff;border:1px solid var(--line);border-radius:2vh;padding:2vh 2vw}
+.t{display:flex;justify-content:space-between;font-size:3vh;color:var(--mut);padding:.4vh 0}
+.big{display:flex;justify-content:space-between;align-items:baseline;font-weight:800;color:var(--g);font-size:7vh;margin-top:1vh}.big span{font-size:3.4vh;color:var(--ink);font-weight:600}
+#paid{flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2vh;padding:4vh 6vw}
+#paid h2{font-size:8vh;margin:0;color:var(--g)}#paid .a{font-size:4.2vh}#paid .ch{font-size:9vh;font-weight:800;color:var(--g2)}
+@media (max-aspect-ratio:1/1){#cart{flex-direction:column}#pic{display:none}}
+</style></head><body>
+<header><img src="tindapos-logo.png" alt="TindaPOS.ph logo"><h1 id="store">Welcome</h1><span id="tag"></span></header>
+<main>
+  <section class="view on" id="idle"><h2 id="welcome">Welcome!</h2><div id="promo"></div></section>
+  <section class="view" id="cart">
+    <div id="itemsWrap"><div id="items"></div></div>
+    <div id="side">
+      <div id="pic"><img id="picImg" alt=""><div id="picName"></div></div>
+      <div id="qrBox"><img id="qrImg" alt=""><div id="qrLbl"></div></div>
+      <div id="totals"><div class="t"><span>Subtotal</span><span id="sub"></span></div><div class="t" id="taxRow"><span id="taxLbl">Tax</span><span id="tax"></span></div><div class="big"><span>Total</span><b id="tot"></b></div></div>
+    </div>
+  </section>
+  <section class="view" id="paid"><h2 id="thanks">Thank you!</h2><div class="a" id="paidAmt"></div><div id="chgBox"><div class="a">Your change</div><div class="ch" id="chg"></div></div></section>
+</main>
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i);};
+  var money=function(n){return '\u20B1'+Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  var promoList=[],promoIdx=0,promoTimer=null,lastMode='';
+  function show(id){['idle','cart','paid'].forEach(function(v){$(v).classList.toggle('on',v===id);});}
+  function setPromo(list){
+    var same=JSON.stringify(list)===JSON.stringify(promoList); promoList=list;
+    if(same) return; promoIdx=0; clearInterval(promoTimer); $('promo').textContent=list[0]||'';
+    if(list.length>1) promoTimer=setInterval(function(){promoIdx=(promoIdx+1)%promoList.length;var p=$('promo');p.style.opacity=0;setTimeout(function(){p.textContent=promoList[promoIdx];p.style.opacity=1;},400);},6000);
+  }
+  window.renderCustomer=function(s){
+    if(!s) return;
+    $('store').textContent=s.store||'Welcome'; $('tag').textContent=s.tagline||'';
+    if(s.mode==='paid'){
+      show('paid'); $('thanks').textContent=s.thanks||'Thank you!';
+      $('paidAmt').textContent='Total paid: '+money(s.total);
+      var hasChange=s.showChange&&s.change>0; $('chgBox').style.display=hasChange?'':'none'; $('chg').textContent=money(s.change);
+    }else if(s.mode==='cart'){
+      show('cart'); var box=$('items'); box.innerHTML='';
+      (s.items||[]).forEach(function(it){
+        var r=document.createElement('div'); r.className='row';
+        var n=document.createElement('span'); n.className='n';
+        var q=document.createElement('span'); q.className='q'; q.textContent=it.qty;
+        n.appendChild(q); n.appendChild(document.createTextNode(it.name));
+        var t=document.createElement('b'); t.textContent=money(it.total);
+        r.appendChild(n); r.appendChild(t); box.appendChild(r);
+      });
+      box.scrollTop=box.scrollHeight;
+      $('sub').textContent=money(s.subtotal); $('taxRow').style.display=s.tax>0?'':'none';
+      $('taxLbl').textContent='Tax'+(s.taxRate?' ('+s.taxRate+'%)':''); $('tax').textContent=money(s.tax); $('tot').textContent=money(s.total);
+      var hasQr=!!s.qr; $('qrBox').style.display=hasQr?'flex':'none'; $('pic').style.flex=hasQr?'.6':'';
+      if(hasQr){ $('qrImg').src=s.qr; $('qrLbl').textContent=s.qrLabel||'Scan to pay with your e-wallet'; }
+      var hasImg=s.last&&s.last.img; $('pic').style.display=hasImg?'':'none';
+      if(hasImg){ $('picImg').src=s.last.img; $('picName').textContent=s.last.name; }
+    }else{
+      show('idle'); $('welcome').textContent=s.welcome||'Welcome!'; setPromo(s.promo||[]);
+    }
+    lastMode=s.mode;
+  };
+  window.addEventListener('message',function(e){ if(e.data&&e.data.type==='tp-customer') window.renderCustomer(e.data.state); });
+  window.renderCustomer({mode:'idle',store:'',welcome:'Welcome!',promo:[]});
+  // Opened from the PC over Wi-Fi (http://PC-IP:8780/customer): follow the PC's live customer screen
+  if(location.protocol==='http:' && location.hostname!=='localhost' && window.EventSource){
+    var connect=function(){
+      var es=new EventSource('/events');
+      es.onmessage=function(e){ try{ window.renderCustomer(JSON.parse(e.data)); }catch(x){} };
+      es.onerror=function(){ es.close(); setTimeout(connect,2000); };
+    };
+    connect();
+    document.addEventListener('click',function(){ var d=document.documentElement; if(!document.fullscreenElement && d.requestFullscreen){ d.requestFullscreen().catch(function(){}); } });
+  }
+})();
+</script></body></html>
